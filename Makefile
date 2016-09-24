@@ -25,6 +25,9 @@ __package:
 package:
 	@echo "someday this will do a thing"
 
+publish:
+	@echo "someday this will do a thing"
+
 deploy-prod: package
 
 run-local: __package
