@@ -1,0 +1,23 @@
+{
+  "name": "311api",
+  "version": "0.1.0",
+  "description": "web api interface to nyc 311 form submission",
+  "main": "index.js",
+  "scripts": {
+    "start":"node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattkime/311api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mattkime/311api/issues"
+  },
+  "homepage": "https://github.com/mattkime/311api#readme",
+  "dependencies": {
+    "hapi": "^15.0.3"
+  }
+}
