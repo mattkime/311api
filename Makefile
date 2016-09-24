@@ -22,6 +22,9 @@ no_op__:
 __package:
 	docker build -t $(PUBLISH_TAG_APP) .
 
+package:
+	@echo "someday this will do a thing"
+
 run-local: __package
 	docker run \
 		--rm \
