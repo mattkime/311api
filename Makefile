@@ -25,6 +25,9 @@ __package:
 package:
 	@echo "someday this will do a thing"
 
+version:
+	@echo $(CI_BUILD_NUMBER)
+
 publish:
 	@echo "someday this will do a thing"
 
