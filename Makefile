@@ -19,11 +19,8 @@ list:
 # required for list
 no_op__:
 
-__package:
-	docker build -t $(PUBLISH_TAG_APP) .
-
 package:
-	@echo "someday this will do a thing"
+	docker build -t $(PUBLISH_TAG_APP) .
 
 version:
 	@echo $(CI_BUILD_NUMBER)
