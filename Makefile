@@ -28,7 +28,17 @@ version:
 publish:
 	docker push $(PUBLISH_TAG_APP)
 
-deploy: package
+deploy: package publish
+	docker pull arukasio/arukas:latest
+	docker run --rm \
+		-e ARUKAS_JSON_API_TOKEN=$(ARUKAS_JSON_API_TOKEN) \
+		-e ARUKAS_JSON_API_SECRET=$(ARUKAS_JSON_API_SECRET) \
+			arukasio/arukas run \
+			--instances=1 \
+			--mem=512 \
+			--app-name="311api" \
+			--ports=3000:tcp \
+				$(PUBLISH_TAG_APP)
 
 run-local: __package
 	docker run \

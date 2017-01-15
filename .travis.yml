@@ -17,7 +17,7 @@ before_install:
   - docker login --username $DOCKER_LOGIN --password $DOCKER_PASS
 
 script:
-  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then make package && make publish; else make package; fi
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_BRANCH" == "master" ]; then make deploy; else make package; fi
 
 after_success:
   - git config --global user.email "builds@travis-ci.com"

@@ -14,8 +14,7 @@ server.route({
     method: 'GET',
     path:'/',
     handler: function (request, reply) {
-
-        return reply('hello world, port 3000');
+        return reply('hello world, port 3000, via travis');
     }
 });
 
