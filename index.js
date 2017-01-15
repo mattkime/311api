@@ -6,7 +6,7 @@ const Hapi = require('hapi');
 const server = new Hapi.Server();
 server.connection({
     host: '0.0.0.0',
-    port: 8000
+    port: 3000
 });
 
 // Add the route
@@ -15,7 +15,7 @@ server.route({
     path:'/',
     handler: function (request, reply) {
 
-        return reply('hello world');
+        return reply('hello world, port 3000');
     }
 });
 

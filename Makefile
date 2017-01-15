@@ -1,10 +1,10 @@
 CI_BUILD_NUMBER ?= $(USER)-snapshot
 CI_WORKDIR ?= $(shell pwd)
-PROJECT = unknown
-CLUSTER = unknown
-ZONE = asia-east1-c
+PROJECT = 311api
+CLUSTER = cluster-1
+ZONE = us-east1-b
 
-PUBLISH_TAG_APP = api-server
+PUBLISH_TAG_APP = "mattkime/api-server:$(CI_BUILD_NUMBER)"
 
 # lists all available targets
 list:
@@ -29,13 +29,13 @@ version:
 	@echo $(CI_BUILD_NUMBER)
 
 publish:
-	@echo "someday this will do a thing"
+	docker push $(PUBLISH_TAG_APP)
 
-deploy-prod: package
+deploy: package
 
 run-local: __package
 	docker run \
 		--rm \
 		-it \
-		-p 8000:8000 \
+		-p 3000:3000 \
 		$(PUBLISH_TAG_APP)

@@ -1,4 +1,4 @@
-FROM node:6.5.0
+FROM node:6.9.4
 
 RUN useradd --user-group --create-home --shell /bin/false api
 
