@@ -1,4 +1,4 @@
-CI_BUILD_NUMBER ?= $(USER)-snapshot
+CI_BUILD_NUMBER ?= $(USER)-snapshot-2
 CI_WORKDIR ?= $(shell pwd)
 PROJECT = 311api
 CLUSTER = cluster-1
@@ -37,10 +37,11 @@ deploy: package publish
 			--instances=1 \
 			--mem=512 \
 			--app-name="311api" \
+			--name="311api" \
 			--ports=3000:tcp \
 				$(PUBLISH_TAG_APP)
 
-run-local: __package
+run-local: package
 	docker run \
 		--rm \
 		-it \
