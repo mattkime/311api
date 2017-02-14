@@ -37,7 +37,7 @@ deploy: package publish
 			--instances=1 \
 			--mem=512 \
 			--app-name="311api" \
-			--name="311api" \
+			--arukas-domain="311api" \
 			--ports=3000:tcp \
 				$(PUBLISH_TAG_APP)
 
