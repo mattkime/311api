@@ -10,9 +10,9 @@ server.connection({
 	routes : { cors: true }
 });
 
-server.register({
-	register: require('h2o2')
-},function (err) {
+server.register(
+	[require('h2o2'), require('inert')],
+function (err) {
 	if (err) {
 		console.log('Failed to load h2o2');
 	}
@@ -32,17 +32,16 @@ server.register({
 			}
 		}
 	}, {
-		method: ['GET','POST'],
+		method: ['GET'],
 		path:'/',
-		handler: function (request, reply) {
-			//someday this will be a web page
-			reply(`hello world, port 3000, via travis, update attempt
-			<form action='lookup' method='post'>
-			<input name='trackingNumber' value='47149D0A64736AF6E0540003BA35EB85'/>
-			<input name='userId' value='8D6A7185-D1C5-4822-9314-26B9BEB05C0B'/>
-			<input name='v' value='7'/>
-			<button>submit</button>
-			</form>`);
+		handler: function (request, reply) { reply.file('index.html'); }
+	}, {
+		method: ['GET'],
+		path:'/script/{file*}',
+		handler: {
+			directory: {
+				path: 'script',
+			}
 		}
 	}]);
 
