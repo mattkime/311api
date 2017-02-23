@@ -50,9 +50,19 @@ let objToFormData = ( obj ) => {
 
 	Object.keys( obj ).forEach( k => data.append( k, obj[k] ) );
 	//TODO - this doesn't work in the browser
-	data.submit = data.submit.bind(data);
 	return data;
 };
+
+var req$ = (url, data) =>
+	Rx.Observable.fromPromise(
+		$.ajax({
+			method: 'POST',
+			data : objToFormData(data),
+			url,
+			processData: false,
+			contentType: false,
+		})
+	);
 
 var modifyDate = function(dateAsStr){
   console.log('dateAsStr', dateAsStr );
@@ -75,7 +85,8 @@ let revGeocode$ = function({latLong: [ lat, long]}){
 		f : 'json',
 	});
 
-	return Rx.Observable.bindNodeCallback(formDataObj.submit)(config)
+	//return Rx.Observable.bindNodeCallback(formDataObj.submit)(config)
+	return req$('http://geocode.arcgis.com//arcgis/rest/services/World/GeocodeServer/reverseGeocode',formDataObj)
 		.flatMap(streamToString)
 		.map(JSON.parse)
 		.do(console.log)
