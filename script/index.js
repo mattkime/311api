@@ -24,6 +24,7 @@ Rx.Observable.fromEvent($('#file'), 'change')
 			)
 	})
 	.subscribe(console.log);
+	//todo - start putting together form
 
 var onGeoclientData = function(data){
   console.log(data);
