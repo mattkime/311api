@@ -79,6 +79,17 @@ let exifRevGeocode$ = image => ExifImage$(image)
 		Rx.Observable.of({ datetime })
 	)});
 
+let fillForms = data => {
+	document.querySelector("#INCIDENTDATETIME").value = data.INCIDENTDATETIME;
+	document.querySelector("#INCIDENTONSTREETNAME").value = data.INCIDENTONSTREETNAME;
+	document.querySelector("#INCIDENTSTREET1NAME").value = data.INCIDENTSTREET1NAME;
+	//data.INCIDENTONSTREETNAME;
+	//data.INCIDENTSTREET1NAME;
+	//data.INCIDENTDATETIME;
+
+
+};
+
 Rx.Observable.fromEvent($('#file'), 'change')
 	.pluck('target','files')
 	.map( files => files[0] )
@@ -89,6 +100,7 @@ Rx.Observable.fromEvent($('#file'), 'change')
 		}
 	})
 	.map( formatComplaint )
+	.do( fillForms )
 	.subscribe(console.log);
 	//todo - start putting together form
 
