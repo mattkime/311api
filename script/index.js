@@ -1,28 +1,94 @@
 console.log('hello hello');
 
+let config = {
+	"userId" : "54cc9827-b305-4960-b088-a44faebb051b",
+	"contact_info" : {
+		"CONTACTANONFLAG" : "Y",
+		"CONTACTDAYTIMEPHONE" : "6166666561",
+		"CONTACTFIRSTNAME" : "Matt",
+		"CONTACTLASTNAME" : "Kime",
+		"CONTACTEMAILADDRESS" : "matt@mattki.me"
+	}
+};
+
+let formatComplaint = data => {
+	let complaint = {
+		COMPLAINTTYPE : 'For Hire Vehicle Complaint',
+		DESCRIPTOR1 : 'Driver Complaint',
+		DESCRIPTOR2 : 'Unsafe Driving',
+		FORM : 'TLC FHV Complaint',
+		topic : 'Taxi Driver',
+		cellPhoneUsage : 'No',
+		VEHICLETYPE : 'Car Service',
+	};
+	let basics = {
+		userId : config.userId,
+		v :'7',
+		MSGSOURCE : '311 Mobile - iPhone',
+	};
+
+	let [str1, str2] = data.address.Address.split(' & ')
+
+	let incident = {
+		INCIDENTDATETIME : data.datetime,
+		INCIDENTSTREET1NAME : str1,
+		INCIDENTONSTREETNAME : str2,
+		INCIDENTSTREETNAME : str2,
+		//** LOCATIONDETAILS: data.address.Address + ', ' + data.promptData.INCIDENTBOROUGH,
+		INCIDENTZIP: data.address.Postal,
+		INCIDENTSPATIALXCOORD: data.location.x,
+		INCIDENTSPATIALYCOORD: data.location.y,
+		//
+		//** INCIDENTBOROUGH : data.promptData.INCIDENTBOROUGH,
+		//**COMPLAINTDETAILS: data.promptData.COMPLAINTDETAILS,
+		//** licensePlate : data.promptData.licensePlate,
+	};
+
+	Object.assign(complaint, basics, config.contact_info, incident);
+	return complaint;
+};
+
 let readerLoad$ = reader => Rx.Observable.fromEvent(reader, 'load')
 	.pluck('target','result')
-	.map( buffer => ExifParser.create(buffer).parse())
+	.map( buffer => ExifParser.create(buffer).parse());
+
+let ExifImage$ = image => {
+	let reader = new FileReader();
+	reader.readAsArrayBuffer(image);
+	return readerLoad$(reader);
+};
+
+let formatExif = exif => ({
+	time : exif.tags.ModifyDate,
+	//latLong : dms2dec(exif.gps.GPSLatitude,exif.gps.GPSLatitudeRef,exif.gps.GPSLongitude,exif.gps.GPSLongitudeRef),
+	latLong: [ exif.tags.GPSLatitude, exif.tags.GPSLongitude ]
+});
+
+let exifRevGeocode$ = image => ExifImage$(image)
+	.do(console.log)
+	.flatMap( exifInfo => {
+		let datetime = modifyDate(exifInfo.tags.ModifyDate);
+		return Rx.Observable.if(
+		() => !!exifInfo.tags.GPSLatitude && !!exifInfo.tags.GPSLongitude,
+		Rx.Observable.of(exifInfo)
+			.map( formatExif )
+			.flatMap( revGeocode$ )
+			.do(console.log)
+			.map( addressInfo => Object.assign(addressInfo,{datetime}))
+			.do(console.log),
+		Rx.Observable.of({ datetime })
+	)});
 
 Rx.Observable.fromEvent($('#file'), 'change')
 	.pluck('target','files')
 	.map( files => files[0] )
-	.flatMap( file => {
-		let reader = new FileReader();
-		reader.readAsArrayBuffer(file);
-		return readerLoad$(reader)
-			.do( exif => {
-				if(exif.tags.ModifyDate){
-					$('#time').text(modifyDate(exif.tags.ModifyDate));
-				}
-			})
-			.flatMap(exif =>
-				Rx.Observable.if(
-					() => exif.tags.GPSLatitude && exif.tags.GPSLongitude,
-					revGeocode$({latLong:[ exif.tags.GPSLatitude, exif.tags.GPSLongitude]})
-				)
-			)
+	.flatMap( exifRevGeocode$ )
+	.do( formattedExif => {
+		if(formattedExif.datetime){
+			$('#time').text(formattedExif.datetime);
+		}
 	})
+	.map( formatComplaint )
 	.subscribe(console.log);
 	//todo - start putting together form
 
@@ -35,7 +101,6 @@ let objToFormData = ( obj ) => {
 	let data = new FormData();
 
 	Object.keys( obj ).forEach( k => data.append( k, obj[k] ) );
-	//TODO - this doesn't work in the browser
 	return data;
 };
 
@@ -58,6 +123,7 @@ var req$ = (url, data) =>
 			contentType: false,
 		})
 	);
+
 
 let revGeocode$ = function({latLong: [ lat, long]}){
 	let config = {
