@@ -1,5 +1,3 @@
-console.log('hello hello');
-
 let config = {
 	"userId" : "54cc9827-b305-4960-b088-a44faebb051b",
 	"contact_info" : {
@@ -27,26 +25,82 @@ let formatComplaint = data => {
 		MSGSOURCE : '311 Mobile - iPhone',
 	};
 
-	let [str1, str2] = data.address.Address.split(' & ')
-
+	let q = id => document.querySelector(`#${id}`).value;
 	let incident = {
-		INCIDENTDATETIME : data.datetime,
-		INCIDENTSTREET1NAME : str1,
-		INCIDENTONSTREETNAME : str2,
-		INCIDENTSTREETNAME : str2,
-		//** LOCATIONDETAILS: data.address.Address + ', ' + data.promptData.INCIDENTBOROUGH,
-		INCIDENTZIP: data.address.Postal,
-		INCIDENTSPATIALXCOORD: data.location.x,
-		INCIDENTSPATIALYCOORD: data.location.y,
-		//
-		//** INCIDENTBOROUGH : data.promptData.INCIDENTBOROUGH,
-		//**COMPLAINTDETAILS: data.promptData.COMPLAINTDETAILS,
-		//** licensePlate : data.promptData.licensePlate,
+		INCIDENTSTREETNAME : q("INCIDENTSTREET1NAME"),
+		LOCATIONDETAILS: q("INCIDENTONSTREETNAME") + ' & ' +
+			q("INCIDENTSTREET1NAME") + ', ' +
+			q("INCIDENTBOROUGH"),
+		media1: document.querySelector('#media1').files[0]
 	};
+
+	[
+		'INCIDENTDATETIME',
+		'INCIDENTONSTREETNAME',
+		'INCIDENTSTREET1NAME',
+		'COMPLAINTDETAILS',
+		'INCIDENTBOROUGH',
+		'INCIDENTZIP',
+		'INCIDENTSPATIALXCOORD',
+		'INCIDENTSPATIALYCOORD',
+		'licensePlate',
+	].forEach( item => incident[item] = q(item));
 
 	Object.assign(complaint, basics, config.contact_info, incident);
 	return complaint;
 };
+
+let fillForms = data => {
+	let [str1, str2] = data.address.Address.split(' & ')
+
+	document.querySelector("#INCIDENTDATETIME").value = data.datetime;
+	document.querySelector("#INCIDENTONSTREETNAME").value = str1;
+	document.querySelector("#INCIDENTSTREET1NAME").value = str2;
+	document.querySelector("#INCIDENTZIP").value = data.address.Postal;
+	document.querySelector("#INCIDENTSPATIALXCOORD").value = data.location.x;
+	document.querySelector("#INCIDENTSPATIALYCOORD").value = data.location.y;
+};
+
+let objToFormData = ( obj ) => {
+	let data = new FormData();
+	Object.keys( obj ).forEach( k => data.append( k, obj[k] ) );
+	return data;
+};
+
+let modifyDate = function(dateAsStr){
+  let [ imgDate, imgTime] = dateAsStr.split(" ")
+  let [ imgYear, imgMonth, imgDay ] = imgDate.split(":");
+  let [ imgHour, imgMinute, imgSecond ] = imgTime.split(":");
+  return dateFormat(new Date(imgYear, imgMonth - 1, imgDay, imgHour, imgMinute, imgSecond), "mm/dd/yyyy hh:MM:ss TT" )
+};
+
+let req$ = (url, data) =>
+	Rx.Observable.fromPromise(
+		$.ajax({
+			method: 'POST',
+			data : objToFormData(data),
+			url,
+			processData: false,
+			contentType: false,
+		})
+	);
+
+let revGeocode$ = function({latLong: [ lat, long]}){
+	let formDataObj = {
+		location : `{ y : ${lat}, x : ${long} }`,
+		distance : 150,
+		returnIntersection : 'true',
+		f : 'json',
+	};
+
+	return req$('//geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode',formDataObj)
+		.map(JSON.parse)
+};
+
+let formatExif = exif => ({
+	time : exif.tags.ModifyDate,
+	latLong: [ exif.tags.GPSLatitude, exif.tags.GPSLongitude ]
+});
 
 let readerLoad$ = reader => Rx.Observable.fromEvent(reader, 'load')
 	.pluck('target','result')
@@ -58,98 +112,33 @@ let ExifImage$ = image => {
 	return readerLoad$(reader);
 };
 
-let formatExif = exif => ({
-	time : exif.tags.ModifyDate,
-	//latLong : dms2dec(exif.gps.GPSLatitude,exif.gps.GPSLatitudeRef,exif.gps.GPSLongitude,exif.gps.GPSLongitudeRef),
-	latLong: [ exif.tags.GPSLatitude, exif.tags.GPSLongitude ]
-});
-
 let exifRevGeocode$ = image => ExifImage$(image)
-	.do(console.log)
 	.flatMap( exifInfo => {
 		let datetime = modifyDate(exifInfo.tags.ModifyDate);
 		return Rx.Observable.if(
-		() => !!exifInfo.tags.GPSLatitude && !!exifInfo.tags.GPSLongitude,
-		Rx.Observable.of(exifInfo)
-			.map( formatExif )
-			.flatMap( revGeocode$ )
-			.do(console.log)
-			.map( addressInfo => Object.assign(addressInfo,{datetime}))
-			.do(console.log),
-		Rx.Observable.of({ datetime })
+			() => !!exifInfo.tags.GPSLatitude && !!exifInfo.tags.GPSLongitude,
+			Rx.Observable.of(exifInfo)
+				.map( formatExif )
+				.flatMap( revGeocode$ )
+				.map( addressInfo => Object.assign(addressInfo,{datetime})),
+			Rx.Observable.of({ datetime })
 	)});
 
-let fillForms = data => {
-	document.querySelector("#INCIDENTDATETIME").value = data.INCIDENTDATETIME;
-	document.querySelector("#INCIDENTONSTREETNAME").value = data.INCIDENTONSTREETNAME;
-	document.querySelector("#INCIDENTSTREET1NAME").value = data.INCIDENTSTREET1NAME;
-	//data.INCIDENTONSTREETNAME;
-	//data.INCIDENTSTREET1NAME;
-	//data.INCIDENTDATETIME;
-
-
-};
-
-Rx.Observable.fromEvent($('#file'), 'change')
+Rx.Observable.fromEvent($('#media1'), 'change')
 	.pluck('target','files')
 	.map( files => files[0] )
 	.flatMap( exifRevGeocode$ )
-	.do( formattedExif => {
-		if(formattedExif.datetime){
-			$('#time').text(formattedExif.datetime);
-		}
-	})
-	.map( formatComplaint )
 	.do( fillForms )
+	.subscribe();
+
+Rx.Observable.fromEvent($('#submit'), 'click')
+	.do( e => e.preventDefault())
+	.map(() => formatComplaint())
+	// silly flatmap
+	.do(console.log)
+	.flatMap(() => req$('lookup', {
+		'trackingNumber':'47149D0A64736AF6E0540003BA35EB85',
+		'userId':'8D6A7185-D1C5-4822-9314-26B9BEB05C0B',
+		'v':'7'
+	}))
 	.subscribe(console.log);
-	//todo - start putting together form
-
-var onGeoclientData = function(data){
-  console.log(data);
-  //$('#precinct').text('@NYPD' + Number(data.address.policePrecinct) + 'Pct');
-}
-
-let objToFormData = ( obj ) => {
-	let data = new FormData();
-
-	Object.keys( obj ).forEach( k => data.append( k, obj[k] ) );
-	return data;
-};
-
-
-var modifyDate = function(dateAsStr){
-  console.log('dateAsStr', dateAsStr );
-  var [ imgDate, imgTime] = dateAsStr.split(" ")
-  var [ imgYear, imgMonth, imgDay ] = imgDate.split(":");
-  var [ imgHour, imgMinute, imgSecond ] = imgTime.split(":");
-  return dateFormat(new Date(imgYear, imgMonth - 1, imgDay, imgHour, imgMinute, imgSecond), "mm/dd/yyyy hh:MM:ss TT" )
-};
-
-var req$ = (url, data) =>
-	Rx.Observable.fromPromise(
-		$.ajax({
-			method: 'POST',
-			data : objToFormData(data),
-			url,
-			processData: false,
-			contentType: false,
-		})
-	);
-
-
-let revGeocode$ = function({latLong: [ lat, long]}){
-	let config = {
-		host: 'geocode.arcgis.com',
-		path: '/arcgis/rest/services/World/GeocodeServer/reverseGeocode',
-		method: 'post'
-	};
-	let formDataObj = {
-		location : `{ y : ${lat}, x : ${long} }`,
-		distance : 150,
-		returnIntersection : 'true',
-		f : 'json',
-	};
-
-	return req$('//geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode',formDataObj)
-		.map(JSON.parse)
-};

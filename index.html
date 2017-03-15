@@ -32,8 +32,8 @@
 	<hr/>
 	<form action="/">
 		<div class="form-group">
-			<label for="file">Photo</label>
-			<input type="file" id="file"/>
+			<label for="media1">Photo</label>
+			<input type="file" id="media1"/>
 		</div>
 		<div class="form-group">
 			<label for="INCIDENTDATETIME">INCIDENTDATETIME</label>
@@ -48,6 +48,18 @@
 			<input type="text" id="INCIDENTSTREET1NAME"/>
 		</div>
 		<div class="form-group">
+			<label for="INCIDENTZIP">INCIDENTZIP</label>
+			<input type="text" id="INCIDENTZIP"/>
+		</div>
+		<div class="form-group">
+			<label for="INCIDENTSPATIALXCOORD">INCIDENTSPATIALXCOORD</label>
+			<input type="text" id="INCIDENTSPATIALXCOORD"/>
+		</div>
+		<div class="form-group">
+			<label for="INCIDENTSPATIALYCOORD">INCIDENTSPATIALYCOORD</label>
+			<input type="text" id="INCIDENTSPATIALYCOORD"/>
+		</div>
+		<div class="form-group">
 			<label for="INCIDENTBOROUGH">Borough</label>
 			<input type="text" id="INCIDENTBOROUGH"/>
 		</div>
@@ -60,13 +72,13 @@
 			<input type="text" id="COMPLAINTDETAILS"/>
 		</div>
 		<div class="form-group">
-			<button>Submit</button>
+			<button id="submit">Submit</button>
 		</div>
 
 	</form>
 	<div id="address"></div>
 	<div id="time"></div>
-	
+
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <!-- script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script -->
