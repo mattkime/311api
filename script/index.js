@@ -31,6 +31,7 @@ let formatComplaint = data => {
 		LOCATIONDETAILS: q("INCIDENTONSTREETNAME") + ' & ' +
 			q("INCIDENTSTREET1NAME") + ', ' +
 			q("INCIDENTBOROUGH"),
+		COMPLAINTDETAILS : q("COMPLAINTDETAILS") + ' - photo attached',
 		media1: document.querySelector('#media1').files[0]
 	};
 
@@ -38,7 +39,6 @@ let formatComplaint = data => {
 		'INCIDENTDATETIME',
 		'INCIDENTONSTREETNAME',
 		'INCIDENTSTREET1NAME',
-		'COMPLAINTDETAILS',
 		'INCIDENTBOROUGH',
 		'INCIDENTZIP',
 		'INCIDENTSPATIALXCOORD',
@@ -71,7 +71,7 @@ let modifyDate = function(dateAsStr){
   let [ imgDate, imgTime] = dateAsStr.split(" ")
   let [ imgYear, imgMonth, imgDay ] = imgDate.split(":");
   let [ imgHour, imgMinute, imgSecond ] = imgTime.split(":");
-  return dateFormat(new Date(imgYear, imgMonth - 1, imgDay, imgHour, imgMinute, imgSecond), "mm/dd/yyyy hh:MM:ss TT" )
+  return dateFormat(new Date(imgYear, imgMonth - 1, imgDay, imgHour, imgMinute, imgSecond), "mm/dd/yyyy HH:MM:ss" )
 };
 
 let req$ = (url, data) =>
@@ -83,6 +83,24 @@ let req$ = (url, data) =>
 			processData: false,
 			contentType: false,
 		})
+	);
+
+let lookup$ = trackingNumber => req$('lookup',{
+		trackingNumber,
+		v:7,
+		userId:config.userId
+	})
+	.flatMap(Rx.Observable.from)
+	.pluck('threeOneOneSRLookupResponse');
+
+let lookupLoop$ = srnumber => Rx.Observable.of(srnumber)
+	.delay(1000)
+	.do(() => console.log('.'))
+	.flatMap(lookup$)
+	.flatMap( res => Rx.Observable.if(
+		() => res.serviceRequestNumber,
+		Rx.Observable.of(res.serviceRequestNumber),
+		lookupLoop$(srnumber))
 	);
 
 let revGeocode$ = function({latLong: [ lat, long]}){
@@ -134,11 +152,8 @@ Rx.Observable.fromEvent($('#media1'), 'change')
 Rx.Observable.fromEvent($('#submit'), 'click')
 	.do( e => e.preventDefault())
 	.map(() => formatComplaint())
-	// silly flatmap
 	.do(console.log)
-	.flatMap(() => req$('lookup', {
-		'trackingNumber':'47149D0A64736AF6E0540003BA35EB85',
-		'userId':'8D6A7185-D1C5-4822-9314-26B9BEB05C0B',
-		'v':'7'
-	}))
+	.flatMap(complaintData => req$('create', complaintData))
+	.pluck('srnumber')
+	.flatMap(lookupLoop$)
 	.subscribe(console.log);
