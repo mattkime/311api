@@ -51,6 +51,8 @@ let formatComplaint = data => {
 };
 
 let fillForms = data => {
+	if(!data.address) return;
+
 	let [str1, str2] = data.address.Address.split(' & ')
 
 	document.querySelector("#INCIDENTDATETIME").value = data.datetime;
@@ -122,7 +124,13 @@ let formatExif = exif => ({
 
 let readerLoad$ = reader => Rx.Observable.fromEvent(reader, 'load')
 	.pluck('target','result')
-	.map( buffer => ExifParser.create(buffer).parse());
+	.map( buffer => {
+		try {
+			return ExifParser.create(buffer).parse()
+		} catch (e) {
+			return { tags: {}};
+		}
+	});
 
 let ExifImage$ = image => {
 	let reader = new FileReader();
@@ -131,8 +139,9 @@ let ExifImage$ = image => {
 };
 
 let exifRevGeocode$ = image => ExifImage$(image)
+	.do(console.log)
 	.flatMap( exifInfo => {
-		let datetime = modifyDate(exifInfo.tags.ModifyDate);
+		let datetime = exifInfo.tags.ModifyDate ? modifyDate(exifInfo.tags.ModifyDate) : null;
 		return Rx.Observable.if(
 			() => !!exifInfo.tags.GPSLatitude && !!exifInfo.tags.GPSLongitude,
 			Rx.Observable.of(exifInfo)
@@ -143,6 +152,7 @@ let exifRevGeocode$ = image => ExifImage$(image)
 	)});
 
 Rx.Observable.fromEvent($('#media1'), 'change')
+	.do(() => console.log('chaaaaange'))
 	.pluck('target','files')
 	.map( files => files[0] )
 	.flatMap( exifRevGeocode$ )
