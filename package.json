@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/mattkime/311api#readme",
   "dependencies": {
-    "h2o2": "^5.4.0",
+    "h2o2": "^6.0.2",
     "hapi": "^16.1.0",
     "inert": "^4.1.0"
   },
